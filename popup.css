@@ -1,0 +1,226 @@
+:root {
+  --bg: #FAFAF9;
+  --card: #FFFFFF;
+  --border: #E7E5E4;
+  --foreground: #18181B;
+  --muted-foreground: #71717A;
+  --muted: #F4F4F5;
+  --secondary: #EEF4F2;
+  --primary: #0F6B5C;
+  --primary-hover: #0C5548;
+  --primary-foreground: #FFFFFF;
+  --primary-soft: rgba(15, 107, 92, 0.10);
+  --amber: #D97706;
+  --success: #00BA7C;
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-full: 999px;
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  width: 340px;
+  font-family: var(--font);
+  color: var(--foreground);
+  background: var(--card);
+  -webkit-font-smoothing: antialiased;
+}
+
+.popup {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+
+.header {
+  padding: 14px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.logo-mark {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-sm);
+  background: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.logo-word {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.status {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted-foreground);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--success);
+  flex-shrink: 0;
+}
+
+/* Main */
+
+main {
+  padding: 16px;
+}
+
+.stats {
+  display: flex;
+  gap: 10px;
+}
+
+.stat-card {
+  flex: 1;
+  padding: 12px 14px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.stat-icon {
+  font-size: 13px;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.stat-card strong {
+  display: block;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-label {
+  display: block;
+  margin-top: 3px;
+  font-size: 11.5px;
+  color: var(--muted-foreground);
+}
+
+.recent {
+  margin-top: 20px;
+}
+
+.recent h2 {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted-foreground);
+  margin: 0 0 8px;
+}
+
+.recent-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Save item — mirrors the tweet-quote block style from the dashboard's bookmark cards */
+
+.recent-list .save-item {
+  background: var(--secondary);
+  border-left: 2px solid rgba(15, 107, 92, 0.35);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  padding: 8px 10px;
+}
+
+.recent-list .save-item strong {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.recent-list .save-item span {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--muted-foreground);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.recent-list:empty::after {
+  content: "No recent saves yet";
+  display: block;
+  padding: 18px 0;
+  text-align: center;
+  font-size: 12.5px;
+  font-style: italic;
+  color: var(--muted-foreground);
+}
+
+/* Footer */
+
+footer {
+  padding: 8px 16px 16px;
+  display: flex;
+  gap: 8px;
+}
+
+.btn {
+  flex: 1;
+  padding: 9px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.btn-primary:hover {
+  background: var(--primary-hover);
+}
+
+.btn-outline {
+  background: var(--card);
+  border-color: var(--border);
+  color: var(--foreground);
+}
+
+.btn-outline:hover {
+  background: var(--muted);
+}

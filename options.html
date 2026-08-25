@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Sift Settings</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+
+<body>
+
+  <div class="container">
+
+    <header class="page-header">
+      <div class="brand">
+        <span class="logo-mark">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 6h16M4 12h8m-8 6h6" />
+          </svg>
+        </span>
+        <span class="logo-word">Sift</span>
+      </div>
+      <h1>Settings</h1>
+      <p class="page-subtitle">Manage your connection and how Sift behaves on X.</p>
+    </header>
+
+    <section class="card">
+      <h2>Connection</h2>
+
+      <div class="row">
+        <span class="row-label">Status</span>
+        <strong id="connection-status" class="row-value">
+          Checking…
+        </strong>
+      </div>
+
+      <div class="row">
+        <span class="row-label">Account</span>
+        <strong id="account-name" class="row-value">
+          —
+        </strong>
+      </div>
+
+      <button id="disconnect" class="btn btn-danger-ghost">
+        Disconnect
+      </button>
+    </section>
+
+    <section class="card">
+      <h2>X Integration</h2>
+
+      <label class="toggle-row">
+        <span class="toggle-row-text">
+          <strong>Show Sift buttons on X</strong>
+          <span class="toggle-row-hint">Adds a save button under posts on x.com</span>
+        </span>
+
+        <span class="toggle">
+          <input type="checkbox" id="enabled">
+          <span class="toggle-track">
+            <span class="toggle-thumb"></span>
+          </span>
+        </span>
+      </label>
+    </section>
+
+    <section class="card card-cta">
+      <div>
+        <h2>Dashboard</h2>
+        <p class="row-hint">Manage collections, tags, and notes.</p>
+      </div>
+      <button id="open-dashboard" class="btn btn-primary">
+        Open Sift Dashboard
+      </button>
+    </section>
+
+  </div>
+
+  <script src="options.js"></script>
+
+</body>
+</html>

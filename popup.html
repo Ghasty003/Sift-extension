@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Sift</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+
+<body>
+
+  <div class="popup">
+
+    <header class="header">
+      <div class="brand">
+        <span class="logo-mark">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 6h16M4 12h8m-8 6h6" />
+          </svg>
+        </span>
+        <span class="logo-word">Sift</span>
+      </div>
+      <div class="status">
+        <span class="status-dot"></span>
+        Connected
+      </div>
+    </header>
+
+    <main>
+
+      <section class="stats">
+        <div class="stat-card">
+          <span class="stat-icon" aria-hidden="true">📥</span>
+          <strong id="inbox-count">12</strong>
+          <span class="stat-label">Inbox</span>
+        </div>
+
+        <div class="stat-card">
+          <span class="stat-icon" aria-hidden="true">⭐</span>
+          <strong id="favorites-count">8</strong>
+          <span class="stat-label">Favorites</span>
+        </div>
+      </section>
+
+      <section class="recent">
+        <h2>Recent saves</h2>
+        <div id="recent-saves" class="recent-list"></div>
+      </section>
+
+    </main>
+
+    <footer>
+      <button id="open-sift" class="btn btn-primary">
+        Open Sift
+      </button>
+
+      <button id="settings" class="btn btn-outline">
+        Settings
+      </button>
+    </footer>
+
+  </div>
+
+  <script src="popup.js"></script>
+
+</body>
+</html>

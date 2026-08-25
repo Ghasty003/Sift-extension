@@ -1,0 +1,61 @@
+.sift-button {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: rgb(113, 118, 123);
+
+  width: 34px;
+  height: 34px;
+
+  padding: 0;
+  margin: 0;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 9999px;
+
+  cursor: pointer;
+
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.sift-button:hover {
+  color: rgb(29, 155, 240);
+  background: rgba(29, 155, 240, 0.1);
+}
+
+.sift-button:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.sift-button.sift-saving {
+  opacity: 0.6;
+}
+
+.sift-button.sift-saved {
+  color: rgb(0, 186, 124);
+}
+
+.sift-button.sift-error {
+  color: rgb(244, 33, 46);
+}
+
+.sift-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: sift-spin 0.7s linear infinite;
+}
+
+@keyframes sift-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

@@ -1,0 +1,255 @@
+:root {
+  --bg: #FAFAF9;
+  --card: #FFFFFF;
+  --border: #E7E5E4;
+  --foreground: #18181B;
+  --muted-foreground: #71717A;
+  --muted: #F4F4F5;
+  --secondary: #EEF4F2;
+  --primary: #0F6B5C;
+  --primary-hover: #0C5548;
+  --primary-foreground: #FFFFFF;
+  --primary-soft: rgba(15, 107, 92, 0.10);
+  --danger: #DC2626;
+  --danger-soft: #FEF2F2;
+  --success: #00BA7C;
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-full: 999px;
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--foreground);
+  -webkit-font-smoothing: antialiased;
+}
+
+.container {
+  width: 560px;
+  margin: 48px auto;
+  padding: 0 20px 40px;
+}
+
+/* Page header */
+
+.page-header {
+  margin-bottom: 24px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.logo-mark {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-sm);
+  background: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.logo-word {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.page-header h1 {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0 0 4px;
+}
+
+.page-subtitle {
+  font-size: 13.5px;
+  color: var(--muted-foreground);
+  margin: 0;
+}
+
+/* Cards */
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  padding: 22px 24px;
+  margin-bottom: 14px;
+  border-radius: var(--radius-lg);
+}
+
+.card h2 {
+  font-size: 14.5px;
+  font-weight: 600;
+  margin: 0 0 4px;
+}
+
+.card-cta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.card-cta h2 {
+  margin-bottom: 2px;
+}
+
+/* Rows */
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.row:first-of-type {
+  margin-top: 6px;
+}
+
+.row-label {
+  font-size: 13.5px;
+  color: var(--muted-foreground);
+}
+
+.row-value {
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.row-hint {
+  font-size: 13px;
+  color: var(--muted-foreground);
+  margin: 0;
+}
+
+/* Buttons */
+
+.btn {
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  padding: 9px 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border-color: var(--primary);
+  white-space: nowrap;
+}
+
+.btn-primary:hover {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+}
+
+.btn-danger-ghost {
+  margin-top: 18px;
+  background: var(--card);
+  color: var(--danger);
+  border-color: var(--border);
+}
+
+.btn-danger-ghost:hover {
+  background: var(--danger-soft);
+  border-color: #FCA5A5;
+}
+
+/* Toggle row */
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  cursor: pointer;
+  margin-top: 4px;
+}
+
+.toggle-row-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.toggle-row-text strong {
+  font-size: 13.5px;
+  font-weight: 500;
+}
+
+.toggle-row-hint {
+  font-size: 12.5px;
+  color: var(--muted-foreground);
+}
+
+/* Custom toggle switch — input stays functionally a checkbox for options.js */
+
+.toggle {
+  position: relative;
+  flex-shrink: 0;
+  display: inline-flex;
+}
+
+.toggle input {
+  position: absolute;
+  opacity: 0;
+  width: 40px;
+  height: 24px;
+  margin: 0;
+  cursor: pointer;
+}
+
+.toggle-track {
+  width: 40px;
+  height: 24px;
+  border-radius: var(--radius-full);
+  background: var(--muted);
+  border: 1px solid var(--border);
+  display: block;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.toggle-thumb {
+  display: block;
+  width: 18px;
+  height: 18px;
+  margin: 2px;
+  border-radius: 50%;
+  background: var(--card);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+  transition: transform 0.15s ease;
+}
+
+.toggle input:checked + .toggle-track {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.toggle input:checked + .toggle-track .toggle-thumb {
+  transform: translateX(16px);
+}
+
+.toggle input:focus-visible + .toggle-track {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
