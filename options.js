@@ -1,21 +1,27 @@
 async function loadSettings() {
-  const state = await chrome.storage.local.get({
-    connected: false,
-    username: null,
-    enabled: true,
-  });
+  // "enabled" is deliberately per-browser only — never synced to the
+  // backend, per product decision.
+  const { enabled } = await chrome.storage.local.get({ enabled: true });
+  document.getElementById("enabled").checked = enabled;
 
+  const state = await chrome.runtime.sendMessage({ type: "GET_EXTENSION_STATE" });
+  renderConnection(state);
+}
+
+function renderConnection(state) {
   const status = document.getElementById("connection-status");
-
   const account = document.getElementById("account-name");
+  const disconnectBtn = document.getElementById("disconnect");
 
-  const enabled = document.getElementById("enabled");
-
-  status.textContent = state.connected ? "● Connected" : "○ Disconnected";
-
-  account.textContent = state.username ?? "Not connected";
-
-  enabled.checked = state.enabled;
+  if (state?.connected) {
+    status.textContent = "● Connected";
+    account.textContent = state.email ?? "—";
+    disconnectBtn.hidden = false;
+  } else {
+    status.textContent = "○ Disconnected";
+    account.textContent = "Not connected";
+    disconnectBtn.hidden = true;
+  }
 }
 
 loadSettings();
@@ -27,10 +33,10 @@ document.getElementById("enabled").addEventListener("change", async (event) => {
 });
 
 document.getElementById("disconnect").addEventListener("click", async () => {
-  await chrome.storage.local.set({
-    connected: false,
-    username: null,
-  });
-
+  await chrome.runtime.sendMessage({ type: "DISCONNECT" });
   await loadSettings();
+});
+
+document.getElementById("open-dashboard").addEventListener("click", () => {
+  chrome.tabs.create({ url: SIFT_WEBSITE_URL });
 });

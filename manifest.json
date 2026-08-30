@@ -8,6 +8,10 @@
     "storage"
   ],
 
+  "host_permissions": [
+    "http://localhost:8080/*"
+  ],
+
   "icons": {
     "16": "icon-16.png",
     "32": "icon-32.png",
@@ -36,6 +40,10 @@
       "matches": ["https://x.com/*"],
       "js": ["content.js"],
       "css": ["sift-button.css"]
+    },
+    {
+      "matches": ["http://localhost:8443/*"],
+      "js": ["bridge-content-script.js"]
     }
   ]
 }

@@ -20,46 +20,58 @@
         <span class="logo-word">Sift</span>
       </div>
       <div class="status">
-        <span class="status-dot"></span>
-        Connected
+        <span class="status-dot" id="status-dot"></span>
+        <span id="status-text">Checking…</span>
       </div>
     </header>
 
-    <main>
+    <div id="connect-view" hidden>
+      <main class="connect-main">
+        <div class="connect-icon" aria-hidden="true">🔌</div>
+        <h2>Connect to Sift</h2>
+        <p>Link this browser to your Sift account to start saving posts from X.</p>
+        <button id="connect" class="btn btn-primary btn-full">Connect</button>
+      </main>
+    </div>
 
-      <section class="stats">
-        <div class="stat-card">
-          <span class="stat-icon" aria-hidden="true">📥</span>
-          <strong id="inbox-count">12</strong>
-          <span class="stat-label">Inbox</span>
-        </div>
+    <div id="connected-view" hidden>
+      <main>
 
-        <div class="stat-card">
-          <span class="stat-icon" aria-hidden="true">⭐</span>
-          <strong id="favorites-count">8</strong>
-          <span class="stat-label">Favorites</span>
-        </div>
-      </section>
+        <section class="stats">
+          <div class="stat-card">
+            <span class="stat-icon" aria-hidden="true">📥</span>
+            <strong id="inbox-count">0</strong>
+            <span class="stat-label">Inbox</span>
+          </div>
 
-      <section class="recent">
-        <h2>Recent saves</h2>
-        <div id="recent-saves" class="recent-list"></div>
-      </section>
+          <div class="stat-card">
+            <span class="stat-icon" aria-hidden="true">⭐</span>
+            <strong id="favorites-count">0</strong>
+            <span class="stat-label">Favorites</span>
+          </div>
+        </section>
 
-    </main>
+        <section class="recent">
+          <h2>Recent saves</h2>
+          <div id="recent-saves" class="recent-list"></div>
+        </section>
 
-    <footer>
-      <button id="open-sift" class="btn btn-primary">
-        Open Sift
-      </button>
+      </main>
 
-      <button id="settings" class="btn btn-outline">
-        Settings
-      </button>
-    </footer>
+      <footer>
+        <button id="open-sift" class="btn btn-primary">
+          Open Sift
+        </button>
+
+        <button id="settings" class="btn btn-outline">
+          Settings
+        </button>
+      </footer>
+    </div>
 
   </div>
 
+  <script src="config.js"></script>
   <script src="popup.js"></script>
 
 </body>

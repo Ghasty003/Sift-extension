@@ -1,143 +1,166 @@
-async function getSiftState() {
-  return await chrome.storage.local.get({
+importScripts("config.js");
+
+async function getStoredToken() {
+  const { siftToken } = await chrome.storage.local.get("siftToken");
+  return siftToken ?? null;
+}
+
+async function clearConnection() {
+  await chrome.storage.local.set({
+    siftToken: null,
     connected: false,
-    username: null,
-    inboxCount: 0,
-    favoritesCount: 0,
-    recentSaves: [],
-    enabled: true,
+    email: null,
   });
 }
 
-async function initializeDevelopmentState() {
-  const state = await chrome.storage.local.get("initialized");
+async function apiFetch(path, options = {}) {
+  const token = await getStoredToken();
 
-  if (state.initialized) {
-    return;
+  if (!token) {
+    throw new Error("NOT_CONNECTED");
   }
 
-  await chrome.storage.local.set({
-    initialized: true,
-
-    connected: true,
-
-    username: "Ghasty",
-
-    inboxCount: 12,
-
-    favoritesCount: 8,
-
-    recentSaves: [
-      {
-        username: "@john",
-        text: "TCP explanation",
-        url: "https://x.com/john/status/123",
-      },
-      {
-        username: "@alice",
-        text: "PostgreSQL optimization",
-        url: "https://x.com/alice/status/456",
-      },
-      {
-        username: "@bob",
-        text: "System design notes",
-        url: "https://x.com/bob/status/789",
-      },
-    ],
-
-    enabled: true,
+  const response = await fetch(`${SIFT_API_BASE_URL}${path}`, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+      ...(options.headers ?? {}),
+    },
   });
+
+  if (response.status === 401) {
+    // Token was revoked (e.g. from the website's own settings) or is
+    // otherwise invalid. Reflect that locally immediately rather than keep
+    // believing we're connected until the user notices something's broken.
+    await clearConnection();
+    throw new Error("UNAUTHORIZED");
+  }
+
+  if (!response.ok) {
+    throw new Error(`REQUEST_FAILED_${response.status}`);
+  }
+
+  if (response.status === 204) {
+    return null;
+  }
+
+  return response.json();
 }
 
-chrome.runtime.onInstalled.addListener(async () => {
-  await chrome.storage.local.set({
-    username: "Gbolahan",
-    theme: "dark",
-    lastSavedUrl: "",
-  });
-});
+async function connectWithToken(rawToken) {
+  await chrome.storage.local.set({ siftToken: rawToken });
 
-chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
-  if (message.type === "PAGE_INFO") {
-    console.log("Page information received:");
-    console.log("URL:", message.url);
-    console.log("Title:", message.title);
+  try {
+    const me = await apiFetch("/users/me");
+    await chrome.storage.local.set({ connected: true, email: me.email });
+  } catch (error) {
+    console.error("Sift: failed to verify token after connecting:", error);
+    await clearConnection();
+  }
+}
+
+async function getExtensionState() {
+  const { connected } = await chrome.storage.local.get({ connected: false });
+
+  if (!connected) {
+    return { connected: false };
   }
 
-  if (message.type === "HELLO") {
-    sendResponse({
-      success: true,
-      message: "Hello from Sift's service worker!",
-    });
-  }
+  try {
+    const [me, summary] = await Promise.all([
+      apiFetch("/users/me"),
+      apiFetch("/bookmarks/summary"),
+    ]);
 
-  if (message.type === "GET_EXTENSION_INFO") {
-    sendResponse({
-      name: "Sift",
-      version: "0.1.0",
-    });
-  }
-
-  if (message.type === "GET_SETTINGS") {
-    chrome.storage.local
-      .get(["username", "theme", "lastSavedUrl"])
-      .then((settings) => {
-        sendResponse(settings);
-      });
-
-    return true;
-  }
-
-  if (message.type === "SAVE_BOOKMARK") {
-    const bookmark = message.bookmark;
-
-    console.log("Received bookmark:", bookmark);
-
-    const state = await getSiftState();
-
-    const alreadySaved = state.recentSaves.some(
-      (save) => save.url === bookmark.url,
-    );
-
-    if (alreadySaved) {
-      sendResponse({
-        success: true,
-        status: "ALREADY_SAVED",
-      });
-
-      return true;
-    }
-
-    const newSave = {
-      username: `@${bookmark.authorUsername}`,
-      text: bookmark.text,
-      url: bookmark.url,
+    return {
+      connected: true,
+      email: me.email,
+      inboxCount: summary.inboxCount,
+      favoritesCount: summary.favoriteCount,
+      recentSaves: (summary.recentBookmarks ?? []).slice(0, 5).map((b) => ({
+        username: `@${b.tweet.authorUsername}`,
+        text: b.tweet.text,
+        url: b.tweet.url,
+      })),
     };
+  } catch (error) {
+    console.error("Sift: failed to load extension state:", error);
+    // apiFetch already cleared local connection state on a 401; for any
+    // other failure (network, 500, etc.) we still report disconnected to
+    // the UI rather than show stale/partial data.
+    return { connected: false };
+  }
+}
 
-    const recentSaves = [newSave, ...state.recentSaves].slice(0, 5);
+async function saveBookmark(bookmark) {
+  // Built explicitly field-by-field (rather than forwarding the raw
+  // extracted object) so we only ever send exactly what
+  // CreateBookmarkRequestDTO expects, even if content.js's extraction ever
+  // picks up extra fields later.
+  const body = {
+    url: bookmark.url,
+    tweetId: bookmark.tweetId,
+    authorUsername: bookmark.authorUsername,
+    authorName: bookmark.authorName,
+    text: bookmark.text,
+    createdAt: bookmark.createdAt,
+  };
 
-    await chrome.storage.local.set({
-      inboxCount: state.inboxCount + 1,
-      recentSaves,
-    });
+  await apiFetch("/bookmarks", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
 
-    sendResponse({
-      success: true,
-      status: "SAVED",
-    });
+async function disconnect() {
+  const token = await getStoredToken();
 
+  if (token) {
+    // Raw token shape is sift_<tokenId>_<secret> — the id the revoke
+    // endpoint wants is embedded in the token we already have.
+    const parts = token.split("_");
+    const tokenId = parts[1];
+
+    try {
+      if (tokenId) {
+        await apiFetch(`/auth/tokens/${tokenId}/revoke`, { method: "POST" });
+      }
+    } catch (error) {
+      // Best-effort: the user explicitly asked to disconnect on this device
+      // right now, so we still clear local state even if the network call
+      // failed. They can also revoke from the website's token list directly
+      // if this request never reached the server.
+      console.error("Sift: revoke request failed, disconnecting locally anyway:", error);
+    }
+  }
+
+  await clearConnection();
+}
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type === "EXTENSION_TOKEN_RECEIVED") {
+    connectWithToken(message.token).then(() => sendResponse({ success: true }));
     return true;
   }
 
   if (message.type === "GET_EXTENSION_STATE") {
-    const state = await getSiftState();
+    getExtensionState().then(sendResponse);
+    return true;
+  }
 
-    console.log("STATE FROM STORAGE:", state);
+  if (message.type === "SAVE_BOOKMARK") {
+    saveBookmark(message.bookmark)
+      .then(() => sendResponse({ success: true }))
+      .catch((error) => {
+        console.error("Sift: save bookmark failed:", error);
+        sendResponse({ success: false, reason: error.message });
+      });
+    return true;
+  }
 
-    sendResponse(state);
-
+  if (message.type === "DISCONNECT") {
+    disconnect().then(() => sendResponse({ success: true }));
     return true;
   }
 });
-
-initializeDevelopmentState();
