@@ -1,5 +1,21 @@
 importScripts("config.js");
 
+chrome.runtime.onInstalled.addListener(async (details) => {
+  if (details.reason !== "install") {
+    // Don't stomp on an existing user's preferences (e.g. enabled: false,
+    // or an already-connected token) on every extension update/reload —
+    // only set defaults the very first time this extension is installed.
+    return;
+  }
+
+  await chrome.storage.local.set({
+    enabled: true,
+    connected: false,
+    siftToken: null,
+    email: null,
+  });
+});
+
 async function getStoredToken() {
   const { siftToken } = await chrome.storage.local.get("siftToken");
   return siftToken ?? null;
@@ -131,7 +147,10 @@ async function disconnect() {
       // right now, so we still clear local state even if the network call
       // failed. They can also revoke from the website's token list directly
       // if this request never reached the server.
-      console.error("Sift: revoke request failed, disconnecting locally anyway:", error);
+      console.error(
+        "Sift: revoke request failed, disconnecting locally anyway:",
+        error,
+      );
     }
   }
 

@@ -1,4 +1,33 @@
-const processedTweets = new WeakSet();
+// A regular Set (not WeakSet) on purpose: we need to be able to clear it
+// when the user re-enables Sift after disabling, so previously-processed
+// tweets get their buttons re-injected instead of being silently skipped.
+const processedTweets = new Set();
+
+let siftEnabled = true;
+
+async function loadEnabledState() {
+  const { enabled } = await chrome.storage.local.get({ enabled: true });
+  siftEnabled = enabled;
+}
+
+function removeAllSiftButtons() {
+  document
+    .querySelectorAll('[data-sift-button="true"]')
+    .forEach((btn) => btn.remove());
+  processedTweets.clear();
+}
+
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area !== "local" || !("enabled" in changes)) return;
+
+  siftEnabled = changes.enabled.newValue;
+
+  if (siftEnabled) {
+    scanTweets();
+  } else {
+    removeAllSiftButtons();
+  }
+});
 
 function extractAuthorName(article, username) {
   if (!username) {
@@ -185,6 +214,10 @@ function injectSiftButton(tweet) {
 }
 
 function processTweet(tweet) {
+  if (!siftEnabled) {
+    return;
+  }
+
   if (processedTweets.has(tweet)) {
     return;
   }
@@ -204,7 +237,9 @@ function scanTweets() {
   }
 }
 
-scanTweets();
+loadEnabledState().then(() => {
+  scanTweets();
+});
 
 const observer = new MutationObserver(() => {
   scanTweets();

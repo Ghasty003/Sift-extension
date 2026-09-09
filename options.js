@@ -4,7 +4,9 @@ async function loadSettings() {
   const { enabled } = await chrome.storage.local.get({ enabled: true });
   document.getElementById("enabled").checked = enabled;
 
-  const state = await chrome.runtime.sendMessage({ type: "GET_EXTENSION_STATE" });
+  const state = await chrome.runtime.sendMessage({
+    type: "GET_EXTENSION_STATE",
+  });
   renderConnection(state);
 }
 
