@@ -110,17 +110,29 @@ async function getExtensionState() {
 }
 
 async function saveBookmark(bookmark) {
-  // Built explicitly field-by-field (rather than forwarding the raw
-  // extracted object) so we only ever send exactly what
-  // CreateBookmarkRequestDTO expects, even if content.js's extraction ever
-  // picks up extra fields later.
   const body = {
     url: bookmark.url,
     tweetId: bookmark.tweetId,
     authorUsername: bookmark.authorUsername,
     authorName: bookmark.authorName,
+    authorAvatarUrl: bookmark.authorAvatarUrl,
     text: bookmark.text,
     createdAt: bookmark.createdAt,
+    isReply: bookmark.isReply,
+    replyToUsername: bookmark.replyToUsername,
+    repostedByName: bookmark.repostedByName,
+    repostedByUsername: bookmark.repostedByUsername,
+    quotedTweet: bookmark.quotedTweet
+      ? {
+          tweetId: bookmark.quotedTweet.tweetId,
+          url: bookmark.quotedTweet.url,
+          authorUsername: bookmark.quotedTweet.authorUsername,
+          authorName: bookmark.quotedTweet.authorName,
+          authorAvatarUrl: bookmark.quotedTweet.authorAvatarUrl,
+          text: bookmark.quotedTweet.text,
+          createdAt: bookmark.quotedTweet.createdAt,
+        }
+      : null,
   };
 
   await apiFetch("/bookmarks", {
@@ -128,7 +140,6 @@ async function saveBookmark(bookmark) {
     body: JSON.stringify(body),
   });
 }
-
 async function disconnect() {
   const token = await getStoredToken();
 
