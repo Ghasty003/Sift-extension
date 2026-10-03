@@ -70,9 +70,11 @@ async function connectWithToken(rawToken) {
   try {
     const me = await apiFetch("/users/me");
     await chrome.storage.local.set({ connected: true, email: me.email });
+    return me;
   } catch (error) {
     console.error("Sift: failed to verify token after connecting:", error);
     await clearConnection();
+    throw error;
   }
 }
 
@@ -172,7 +174,11 @@ async function disconnect() {
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "EXTENSION_TOKEN_RECEIVED") {
-    connectWithToken(message.token).then(() => sendResponse({ success: true }));
+    connectWithToken(message.token)
+      .then(() => sendResponse({ success: true }))
+      .catch((error) =>
+        sendResponse({ success: false, reason: error.message }),
+      );
     return true;
   }
 
