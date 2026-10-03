@@ -118,6 +118,7 @@ async function saveBookmark(bookmark) {
     authorAvatarUrl: bookmark.authorAvatarUrl,
     text: bookmark.text,
     createdAt: bookmark.createdAt,
+    media: bookmark.media ?? [],
     isReply: bookmark.isReply,
     replyToUsername: bookmark.replyToUsername,
     repostedByName: bookmark.repostedByName,
@@ -131,6 +132,7 @@ async function saveBookmark(bookmark) {
           authorAvatarUrl: bookmark.quotedTweet.authorAvatarUrl,
           text: bookmark.quotedTweet.text,
           createdAt: bookmark.quotedTweet.createdAt,
+          media: bookmark.quotedTweet.media ?? [],
         }
       : null,
   };

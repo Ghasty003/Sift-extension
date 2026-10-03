@@ -83,7 +83,159 @@ function extractAvatarUrl(scope) {
   return img?.src ?? "";
 }
 
-function extractReplyContext(article) {
+function getStatusIdFromUrl(url) {
+  return url.match(/\/status\/(\d+)/)?.[1] ?? "";
+}
+
+function getStatusIdentity(url) {
+  const parsed = url.match(/x\.com\/([^/]+)\/status\/(\d+)/);
+
+  return {
+    username: parsed?.[1] ?? "",
+    tweetId: parsed?.[2] ?? getStatusIdFromUrl(url),
+  };
+}
+
+function findQuotedCardForLink(article, link) {
+  const actionBar = findActionBar(article);
+  const candidates = [...article.querySelectorAll('[role="link"]')].filter(
+    (container) =>
+      container.contains(link) &&
+      (container.querySelector('[data-testid="tweetText"]') ||
+        container.querySelector('[data-testid="tweetPhoto"]') ||
+        container.querySelector('[data-testid="videoPlayer"]')) &&
+      (!actionBar || !container.contains(actionBar)),
+  );
+
+  // X uses both <div> and <a> role="link" wrappers for quote cards and may
+  // nest several of them. Use the
+  // smallest matching wrapper so author/text/avatar queries stay inside the
+  // quoted post instead of leaking out to the outer post.
+  return candidates.reduce(
+    (smallest, candidate) =>
+      smallest?.contains(candidate) ? candidate : smallest,
+    null,
+  );
+}
+
+function findMainStatusLink(article) {
+  const statusLinks = [...article.querySelectorAll('a[href*="/status/"]')];
+
+  return (
+    statusLinks.find((link) => !findQuotedCardForLink(article, link)) ??
+    statusLinks[0] ??
+    null
+  );
+}
+
+function getQuotedCardScopes(article) {
+  const scopes = [];
+
+  for (const link of article.querySelectorAll('a[href*="/status/"]')) {
+    const scope = findQuotedCardForLink(article, link);
+    if (scope && !scopes.includes(scope)) {
+      scopes.push(scope);
+    }
+  }
+
+  return scopes;
+}
+
+function getBackgroundImageUrl(element) {
+  const backgroundImage = getComputedStyle(element).backgroundImage;
+  const match = backgroundImage.match(/^url\(["']?(.*?)["']?\)$/);
+  return match?.[1] ?? "";
+}
+
+function extractTweetMedia(scope, excludedScopes = []) {
+  const media = [];
+  const seen = new Set();
+
+  function isExcluded(element) {
+    return excludedScopes.some((excluded) => excluded.contains(element));
+  }
+
+  function add(type, previewUrl) {
+    if (!previewUrl || seen.has(previewUrl) || media.length >= 4) return;
+    seen.add(previewUrl);
+    media.push({ type, previewUrl });
+  }
+
+  for (const image of scope.querySelectorAll('[data-testid="tweetPhoto"] img')) {
+    if (isExcluded(image)) continue;
+    add("IMAGE", image.currentSrc || image.src);
+  }
+
+  for (const player of scope.querySelectorAll('[data-testid="videoPlayer"]')) {
+    if (isExcluded(player)) continue;
+
+    const video = player.querySelector("video");
+    const poster =
+      video?.poster ||
+      video?.getAttribute("poster") ||
+      player.querySelector("img")?.currentSrc ||
+      player.querySelector("img")?.src ||
+      getBackgroundImageUrl(player);
+
+    add("VIDEO", poster);
+  }
+
+  return media;
+}
+
+function getConversationTimelineReply(article, tweetId) {
+  const pageTweetId = location.pathname.match(/\/status\/(\d+)/)?.[1];
+
+  // This fallback is only for a post-detail page. The post whose ID is in
+  // the URL is the conversation root; any other post needs more evidence
+  // before we call it a reply.
+  if (!pageTweetId || !tweetId || pageTweetId === tweetId) {
+    return false;
+  }
+
+  // X groups the root post and its replies inside one labelled timeline.
+  // Looking for the root post in that same timeline keeps this heuristic
+  // away from ordinary Home/Search/Profile timelines.
+  const timeline = article.closest('[aria-label*="Timeline" i]');
+  if (!timeline) {
+    return false;
+  }
+
+  const rootArticle = [...timeline.querySelectorAll('article[data-testid="tweet"]')]
+    .find((candidate) => {
+      const statusLink = candidate.querySelector('a[href*="/status/"]');
+      return getStatusIdFromUrl(statusLink?.href ?? "") === pageTweetId;
+    });
+
+  if (!rootArticle) {
+    return false;
+  }
+
+  // Related recommendations can be appended to the same timeline after a
+  // "Discover more"/"More posts" heading. Do not mislabel those as replies.
+  const recommendationBoundary = [...
+    timeline.querySelectorAll('[role="heading"], h1, h2, h3'),
+  ].find((heading) =>
+    /^(discover more|more posts)$/i.test(heading.textContent?.trim() ?? ""),
+  );
+
+  if (
+    recommendationBoundary &&
+    rootArticle.compareDocumentPosition(recommendationBoundary) &
+      Node.DOCUMENT_POSITION_FOLLOWING &&
+    recommendationBoundary.compareDocumentPosition(article) &
+      Node.DOCUMENT_POSITION_FOLLOWING
+  ) {
+    return false;
+  }
+
+  return Boolean(
+    rootArticle.compareDocumentPosition(article) &
+      Node.DOCUMENT_POSITION_FOLLOWING,
+  );
+}
+
+function extractReplyContext(article, tweetId) {
   // X renders "Replying to @user [@user2 ...]" as its own block directly
   // above the tweet's own author line. We treat presence of that block as
   // "this is a reply," and take the first @mention as who it's replying to.
@@ -95,7 +247,13 @@ function extractReplyContext(article) {
   );
 
   if (!replyBlock) {
-    return { isReply: false, replyToUsername: "" };
+    return {
+      isReply: getConversationTimelineReply(article, tweetId),
+      // X does not expose the exact parent account in this compact thread
+      // layout. Leave it empty so the UI can say "Reply in thread" rather
+      // than displaying an incorrect username.
+      replyToUsername: "",
+    };
   }
 
   const mentionLink = replyBlock.querySelector('a[href^="/"]');
@@ -115,21 +273,19 @@ function extractQuotedTweet(article, mainTweetId) {
   const statusLinks = [...article.querySelectorAll('a[href*="/status/"]')];
 
   for (const link of statusLinks) {
-    const statusMatch = link.href.match(/x\.com\/([^/]+)\/status\/(\d+)/);
-    const tweetId = statusMatch?.[2];
-
-    if (!tweetId || tweetId === mainTweetId) continue;
-
-    const quotedScope = link.closest('div[role="link"]') ?? link.closest("div");
+    const quotedScope = findQuotedCardForLink(article, link);
     if (!quotedScope) continue;
 
-    const authorUsername = statusMatch[1] ?? "";
+    const { username: authorUsername, tweetId } = getStatusIdentity(link.href);
+
+    if (!tweetId || tweetId === mainTweetId) continue;
     const authorName = extractAuthorName(quotedScope, authorUsername);
     const authorAvatarUrl = extractAvatarUrl(quotedScope);
     const text =
       quotedScope.querySelector('[data-testid="tweetText"]')?.innerText ?? "";
     const createdAt =
       quotedScope.querySelector("time")?.getAttribute("datetime") ?? "";
+    const media = extractTweetMedia(quotedScope);
 
     return {
       tweetId,
@@ -139,6 +295,7 @@ function extractQuotedTweet(article, mainTweetId) {
       authorAvatarUrl,
       text,
       createdAt,
+      media,
     };
   }
 
@@ -146,32 +303,28 @@ function extractQuotedTweet(article, mainTweetId) {
 }
 
 function extractTweet(article) {
-  // NOTE: this grabs the FIRST tweetText/time/status-link in the article,
-  // which is correct as long as the outer tweet's own content always
-  // precedes a nested quote-tweet card in DOM order (true in current X
-  // markup). An image-only outer tweet quoting a text tweet is an edge
-  // case worth testing — the text extracted below could end up empty
-  // rather than wrongly grabbing the quoted tweet's text, since querySelector
-  // still returns the first tweetText node, which would be the quoted one
-  // if the outer tweet truly has none. Flagging, not solved here.
-  const text =
-    article.querySelector('[data-testid="tweetText"]')?.innerText ?? "";
-
-  const statusLink = [...article.querySelectorAll("a")].find((link) =>
-    link.href.includes("/status/"),
+  const quotedCardScopes = getQuotedCardScopes(article);
+  const textElement = [...
+    article.querySelectorAll('[data-testid="tweetText"]'),
+  ].find(
+    (candidate) =>
+      !quotedCardScopes.some((quotedScope) => quotedScope.contains(candidate)),
   );
+  const text = textElement?.innerText ?? "";
 
-  const statusMatch = statusLink?.href.match(/x\.com\/([^/]+)\/status\/(\d+)/);
+  const statusLink = findMainStatusLink(article);
+  const statusIdentity = getStatusIdentity(statusLink?.href ?? "");
 
   const url = statusLink?.href ?? "";
-  const authorUsername = statusMatch?.[1] ?? "";
-  const tweetId = statusMatch?.[2] ?? "";
+  const authorUsername = statusIdentity.username;
+  const tweetId = statusIdentity.tweetId;
   const createdAt =
     article.querySelector("time")?.getAttribute("datetime") ?? "";
   const authorName = extractAuthorName(article, authorUsername);
   const authorAvatarUrl = extractAvatarUrl(article);
-  const { isReply, replyToUsername } = extractReplyContext(article);
+  const { isReply, replyToUsername } = extractReplyContext(article, tweetId);
   const quotedTweet = extractQuotedTweet(article, tweetId);
+  const media = extractTweetMedia(article, quotedCardScopes);
 
   const { repostedByName, repostedByUsername } = extractRepostContext(article);
 
@@ -183,6 +336,7 @@ function extractTweet(article) {
     authorAvatarUrl,
     text,
     createdAt,
+    media,
     isReply,
     replyToUsername,
     quotedTweet,
